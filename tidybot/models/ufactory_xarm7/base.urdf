@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<!-- Generated using onshape-to-robot -->
+<!-- Onshape https://cad.onshape.com/documents/994109b3823cfe252134a742/w/6cf69460144e281f37bae894/e/ca05738ab1707ab83071b9cb -->
+<robot name="my-robot">
+  <!-- Link 2020_20mm_corner_bracket -->
+  <link name="2020_20mm_corner_bracket">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="1e-09"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <!-- Part 2020_20mm_corner_bracket -->
+    <visual>
+      <origin xyz="0.176 0.23 0.424775" rpy="1.5708 1.5708 0"/>
+      <geometry>
+        <mesh filename="package://assets/2020_20mm_corner_bracket.stl"/>
+      </geometry>
+      <material name="2020_20mm_corner_bracket_material">
+        <color rgba="0.917647 0.917647 0.917647 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0.176 0.23 0.424775" rpy="1.5708 1.5708 0"/>
+      <geometry>
+        <mesh filename="package://assets/2020_20mm_corner_bracket.stl"/>
+      </geometry>
+    </collision>
+  </link>
+</robot>

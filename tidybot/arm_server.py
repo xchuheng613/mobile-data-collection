@@ -37,12 +37,13 @@ class Arm:
 class ArmManager(BaseManager):
     pass
 
-ArmManager.register('Arm', Arm)
+if __name__ == '__main__':
+    ArmManager.register('Arm', Arm)
 
-arm_manager = ArmManager(address=(ARM_RPC_HOST, ARM_RPC_PORT), authkey=RPC_AUTHKEY)
-server = arm_manager.get_server()
-print(f'Arm manager server started at {ARM_RPC_HOST}:{ARM_RPC_PORT}')
-server.serve_forever()
+    arm_manager = ArmManager(address=(ARM_RPC_HOST, ARM_RPC_PORT), authkey=RPC_AUTHKEY)
+    server = arm_manager.get_server()
+    print(f'Arm manager server started at {ARM_RPC_HOST}:{ARM_RPC_PORT}')
+    server.serve_forever()
 
 
 
