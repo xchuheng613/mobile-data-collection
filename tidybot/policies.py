@@ -57,7 +57,8 @@ class WebServer:
         print(f'Starting server at {address}:5000')
         self.socketio.run(self.app, host='0.0.0.0')
 
-DEVICE_CAMERA_OFFSET = np.array([0.0, 0.02, -0.04])  # iPhone 14 Pro
+# DEVICE_CAMERA_OFFSET = np.array([0.0, 0.02, -0.04])  # iPhone 14 Pro
+DEVICE_CAMERA_OFFSET = np.array([0.0, 0.0, -0.0]) 
 
 # Convert coordinate system from WebXR to robot
 def convert_webxr_pose(pos, quat):
@@ -105,7 +106,6 @@ class TeleopController:
     def process_message(self, data):
         if not self.targets_initialized:
             return
-
         # Use device ID to disambiguate between primary and secondary devices
         device_id = data['device_id']
 
@@ -131,7 +131,6 @@ class TeleopController:
         # Teleop is enabled
         if self.primary_device_id is not None and 'teleop_mode' in data:
             pos, rot = convert_webxr_pose(data['position'], data['orientation'])
-
             # Base movement
             if data['teleop_mode'] == 'base' or device_id == self.secondary_device_id:  # Note: Secondary device can only control base
                 # Store reference poses
@@ -168,7 +167,8 @@ class TeleopController:
                 pos_diff = pos - self.arm_xr_ref_pos  # WebXR
                 pos_diff += ref_z_rot.apply(self.arm_ref_pos) - z_rot.apply(self.arm_ref_pos)  # Secondary base control: Compensate for base rotation
                 pos_diff[:2] += self.arm_ref_base_pose[:2] - self.base_pose[:2]  # Secondary base control: Compensate for base translation
-                self.arm_target_pos = self.arm_ref_pos + z_rot_inv.apply(pos_diff)
+                self.arm_target_pos = (self.arm_ref_pos + z_rot_inv.apply(pos_diff) * 1000)
+                # print(self.arm_target_pos)
 
                 # Orientation
                 self.arm_target_rot = (z_rot_inv * (rot * self.arm_xr_ref_rot_inv) * ref_z_rot) * self.arm_ref_rot
@@ -190,13 +190,12 @@ class TeleopController:
             self.base_target_pose = obs['base_pose']
             self.arm_target_pos = obs['arm_pos']
             self.arm_target_rot = R.from_quat(obs['arm_quat'])
+            # self.arm_target_rot = obs['arm_quat']
             self.gripper_target_pos = obs['gripper_pos']
             self.targets_initialized = True
-
         # Return no action if teleop is not enabled
         if self.primary_device_id is None:
             return None
-
         # Get most recent teleop command
         arm_quat = self.arm_target_rot.as_quat()
         if arm_quat[3] < 0.0:  # Enforce quaternion uniqueness (Note: Not strictly necessary since policy training uses 6D rotation representation)
@@ -205,9 +204,9 @@ class TeleopController:
             'base_pose': self.base_target_pose.copy(),
             'arm_pos': self.arm_target_pos.copy(),
             'arm_quat': arm_quat,
+            # 'arm_quat': self.arm_target_rot.copy(),
             'gripper_pos': self.gripper_target_pos.copy(),
         }
-
         return action
 
 # Teleop using WebXR phone web app

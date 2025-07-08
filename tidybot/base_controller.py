@@ -80,7 +80,6 @@ class Motor:
         return TWO_PI * self.velocity_signal.value
 
     def set_velocity(self, velocity):
-        # print(f"[CAN] motor {self.num} set {velocity:.2f} rad/s")
         self.fx.set_control(self.velocity_request.with_velocity(velocity / TWO_PI))
 
     def set_neutral(self):
@@ -89,8 +88,8 @@ class Motor:
 class Caster:
     def __init__(self, num):
         self.num = num
-        self.steer_motor = Motor(2 * self.num - 1)  # Odd
-        self.drive_motor = Motor(2 * self.num)      # Even
+        self.steer_motor = Motor(2 * self.num - 1)
+        self.drive_motor = Motor(2 * self.num)
         self.cancoder = hardware.CANcoder(self.num)
         self.cancoder_cfg = configs.CANcoderConfiguration()
 
@@ -148,12 +147,16 @@ class Vehicle:
         self.max_vel = np.array(max_vel)
         self.max_accel = np.array(max_accel)
 
+        # Use PID file to enforce single instance
+        # create_pid_file('tidybot2-base-controller')
+
+        # Initialize casters
         self.casters = [Caster(num) for num in range(1, NUM_CASTERS + 1)]
 
         # CAN bus update frequency
-        self.status_signals = [signal for caster in self.casters for signal in caster.status_signals] 
-        phoenix6.BaseStatusSignal.set_update_frequency_for_all(CONTROL_FREQ, *self.status_signals)
-    
+        self.status_signals = [signal for caster in self.casters for signal in caster.status_signals]
+        phoenix6.BaseStatusSignal.set_update_frequency_for_all(CONTROL_FREQ, self.status_signals)
+
         # Joint space
         num_motors = 2 * NUM_CASTERS
         self.q = np.zeros(num_motors)
@@ -292,10 +295,8 @@ class Vehicle:
             ])
 
             # Check for new command
-            # print(self.command_queue.qsize())
             if not self.command_queue.empty():
                 command = self.command_queue.get()
-                # print("[ctrl] dequeued", command)
                 last_command_time = time.time()
                 target = command['target']
 
@@ -341,9 +342,6 @@ class Vehicle:
                 # Send motor neutral commands
                 for i in range(NUM_CASTERS):
                     self.casters[i].set_neutral()
-                    if i == 0:
-                        print("[ctrl] sending dq_d =", dq_d[2*i : 2*i+2])
-                    self.casters[i].set_velocities(dq_d[2*i], dq_d[2*i + 1])
 
             else:
                 # Send enable signal to devices
@@ -358,7 +356,6 @@ class Vehicle:
 
                 # Send motor velocity commands
                 for i in range(NUM_CASTERS):
-                    # print(f"{i}, {dq_d[2*i]}, {dq_d[2*i + 1]}")
                     self.casters[i].set_velocities(dq_d[2*i], dq_d[2*i + 1])
 
             # Debugging

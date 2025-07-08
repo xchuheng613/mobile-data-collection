@@ -37,9 +37,9 @@ class Base:
 class WheelManager(BaseManager):
     pass
 
-if __name__ == '__main__':
-    WheelManager.register('Base', Base)
+WheelManager.register('Base', Base)
 
+if __name__ == '__main__':
     base_manager = WheelManager(address=(BASE_RPC_HOST, BASE_RPC_PORT), authkey=RPC_AUTHKEY)
     server = base_manager.get_server()
     print(f'Base manager server started at {BASE_RPC_HOST}:{BASE_RPC_PORT}')

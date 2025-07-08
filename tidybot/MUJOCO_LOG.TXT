@@ -1,0 +1,15 @@
+Mon Jul  7 17:40:26 2025
+ERROR: Python exception raised
+
+Mon Jul  7 18:06:54 2025
+ERROR: could not initialize GLFW
+
+Mon Jul  7 18:17:31 2025
+ERROR: Python exception raised
+
+Mon Jul  7 18:18:21 2025
+ERROR: Python exception raised
+
+Mon Jul  7 18:19:15 2025
+ERROR: Python exception raised
+

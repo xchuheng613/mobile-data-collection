@@ -31,7 +31,9 @@ class KeyboardTeleop:
         self.enabled = False
 
     def run(self):
-        print("Press SPACE to enable control, ESC to exit.")
+        print('*'*5,"Press SPACE to enable control, ESC to exit.",'*'*5)
+        print('*'*5,"W,A,S,D are forward, right, backward, and left respectively.",'*'*5)
+        print('*'*5,"Q and E are rotating clockwise and anticlockwise respectively.",'*'*5)
         while True:
             pygame.event.pump()
             keys = pygame.key.get_pressed()
@@ -48,7 +50,7 @@ class KeyboardTeleop:
                 v = key_velocity(keys)
                 if np.linalg.norm(v) > 0:
                     scaled_v = v * self.vehicle.max_vel
-                    print("[teleop] enqueue", scaled_v)  
+                    # print("[teleop] enqueue", scaled_v)  
                     self.vehicle.set_target_velocity(scaled_v, frame="local")
                 else:
                     # If no key pressed, stop

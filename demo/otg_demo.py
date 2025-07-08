@@ -28,13 +28,13 @@ inp.max_acceleration = np.array([12.0, 12.0, 12.0, 12.0, 12.0, 16.0, 16.0])
 print("Starting OTG demo...")
 step = 0
 while True:
+    step += 1
+    inp.current_position = np.array([0.5, -0.3, 0.6, -0.5, 0.2, -0.4, 0.1]) / 2
     result = otg.update(inp, out)
     if result != Result.Working:
         print("OTG complete:", result)
         break
 
     print(f"Step {step:03d} | q: {[round(x, 3) for x in out.new_position]}")
-    step += 1
-
     out.pass_to_input(inp)
     time.sleep(CONTROL_PERIOD)

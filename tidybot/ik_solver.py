@@ -93,8 +93,8 @@ class IKSolver:
     
 if __name__ == '__main__':
     ik_solver = IKSolver()
-    home_pos, home_quat = np.array([0.456, 0.0, 0.434]), np.array([0.5, 0.5, 0.5, 0.5])
-    retract_qpos = np.deg2rad([0, -20, 180, -146, 0, -50, 90])
+    home_pos, home_quat = np.array([0.2, 0.01, 0.12]), np.array([0.9, 0.03, 0, -0.])
+    retract_qpos = np.deg2rad([0, 0, 0, 0, 0, 0, 0])
 
     import time
     start_time = time.time()
@@ -107,3 +107,4 @@ if __name__ == '__main__':
     print(np.rad2deg(ik_solver.solve(home_pos, home_quat, retract_qpos)).round())
     pos, quat = ik_solver.forward_kinematics(ik_solver.solve(home_pos, home_quat, retract_qpos))
     print(pos, quat)
+    print(ik_solver.forward_kinematics(np.array([0,0,0,0,0,0,0])))

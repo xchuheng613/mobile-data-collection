@@ -5,6 +5,8 @@ import time
 import numpy as np
 import subprocess
 from xarm.wrapper import XArmAPI
+from ik_solver import IKSolver
+from scipy.spatial.transform import Rotation as R
 
 class PIDController:
     def __init__(self, kp, ki, kd):
@@ -24,8 +26,8 @@ class PIDController:
 
         value = (
                 self.kp * err
-                + self.kd * (err - self._prev_err) / dt
                 + self.ki * self._cum_err
+                + self.kd * (err - self._prev_err) / dt
         )
 
         self._prev_err = err
@@ -58,6 +60,8 @@ class Xarm:
         self.CTRL_FREQ = config.ctrl_freq
         self.CTRL_PERIOD = config.ctrl_period
         
+        self.arm = XArmAPI(port=config.arm_ip)
+        self.reset()
         
         self.q = np.zeros(self.dof)
         self.dq = np.zeros(self.dof)
@@ -67,8 +71,7 @@ class Xarm:
         self.ee_quat = np.zeros(4)
         self.ee_rpy = np.zeros(3)
         
-        self.arm = XArmAPI(port=config.arm_ip)
-        self.reset()
+        self.update_state()
         
         if not self.use_servo_control:
             default_kp = np.array([2, 2, 1, 1, 1, 1, 1]) * 5
@@ -92,6 +95,7 @@ class Xarm:
         self.control_loop_lock = threading.Lock()
         self.control_loop_running = False
         
+        self.solver = IKSolver()
 
     def reset(self):
         print("*"*20,"RESETTING ARM","*"*20)
@@ -101,13 +105,16 @@ class Xarm:
         self.arm.clean_error()
         self.arm.motion_enable(True)
         self.arm.set_mode(0)
+        while self.arm.mode != 0:
+            time.sleep(0.1)
+            self.arm.set_mode(0)
         self.arm.set_state(0)
         time.sleep(0.1)
         if self.use_gripper:
             self.arm.set_gripper_mode(0)
             self.arm.set_gripper_enable(True)
             self.arm.set_gripper_position(850, wait=True)
-            self.gripper_pos = 1.0
+        self.gripper_pos = np.zeros(1)
         self.arm.move_gohome(wait=False)
         while True:
             code, current_q = self.arm.get_servo_angle(is_radian=True)
@@ -121,6 +128,9 @@ class Xarm:
             time.sleep(0.1)
         
         self.arm.set_mode(self.xarm_mode)
+        while self.arm.mode != self.xarm_mode:
+            time.sleep(0.1)
+            self.arm.set_mode(self.xarm_mode)
         self.arm.set_state(0)
         time.sleep(0.1)
         print("*"*20,"GOT HOME","*"*20)
@@ -128,13 +138,17 @@ class Xarm:
 
         
     def set_target_state(self, action):
-        state = np.concatenate([
-            action['arm_pos'],
-            action['arm_euler']
-        ])
-        code, qpos = self.arm.get_inverse_kinematics(state, input_is_radian=False, return_is_radian=True) 
-        print("="*20,f"ik code: {code}", "="*20)
+        if 'arm_quat' in action:
+            quat = action['arm_quat']
+        elif 'arm_euler' in action:
+            quat = R.from_euler('xyz', action['arm_euler']).as_quat()
+        else:
+            quat = np.zeros(4)
+        pos = np.array(action['arm_pos'])/1000.0
+        qpos = self.solver.solve(pos, quat, self.q)
+        # print(self.q)
         print(f"ik result: {[round(x,4) for x in qpos]}")
+        # print(self.solver.forward_kinematics(qpos))
         self._enqueue_command((qpos, action['gripper_pos']))
 
     def _enqueue_command(self, target):
@@ -143,8 +157,7 @@ class Xarm:
         elif not self.enable:
             print("Not Enabled")
         else:
-            with self.control_loop_lock:
-                self.command_queue.put(target, block=False)
+            self.command_queue.put(target, block=False)
             
     def control_loop(self):
         command = None
@@ -209,33 +222,15 @@ class Xarm:
         self.control_loop_thread = None
         
     def update_state(self):
-        def _rpy_to_quat(rpy):
-            import math
-            roll, pitch, yaw = rpy
-            cy = math.cos(yaw * 0.5)
-            sy = math.sin(yaw * 0.5)
-            cp = math.cos(pitch * 0.5)
-            sp = math.sin(pitch * 0.5)
-            cr = math.cos(roll * 0.5)
-            sr = math.sin(roll * 0.5)
-
-            q = np.array([
-                cr * cp * cy + sr * sp * sy,
-                sr * cp * cy - cr * sp * sy,
-                cr * sp * cy + sr * cp * sy,
-                cr * cp * sy - sr * sp * cy
-            ])
-            return q
-        code, state = self.arm.get_joint_states()
+        code, state = self.arm.get_joint_states(is_radian=True)
         self.q = state[0]
         self.dq = state[1]
         self.tau = state[2]
         if self.use_gripper:
             code, self.gripper_pos = self.arm.get_gripper_position() / 850
             
-                
-        code, ee_state = self.arm.get_position()
+        code, ee_state = self.arm.get_position(is_radian=True)
         self.ee_pos = ee_state[:3]
         self.ee_rpy = ee_state[3:]
-        self.ee_quat = _rpy_to_quat(self.ee_rpy)
+        self.ee_quat = R.from_euler('xyz', self.ee_rpy).as_quat()
         

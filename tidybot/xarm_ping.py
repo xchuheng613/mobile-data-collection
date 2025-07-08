@@ -11,7 +11,7 @@ time.sleep(0.3)          # let brakes release
 
 err = arm.set_servo_angle(
         angle=[0, 0, 0, 0, 0, 0, 0],
-        speed=60,
+        speed=40,
         is_radian=False,
         wait=False)   # block until finished
 print('ret code:', err)

@@ -283,8 +283,9 @@ class MujocoSim:
             self.reset()
 
         # Control callbacks
-        # if command:
-            # print('*'*30,command,'*'*30)
+        print('*'*30,command,'*'*30)
+        if command is not None:
+            time.sleep(10000)
         self.base_controller.control_callback(command)
         self.arm_controller.control_callback(command)
 
@@ -298,7 +299,7 @@ class MujocoSim:
         site_xpos[:2] -= self.qpos_base[:2]  # Base position inverse
         mujoco.mju_axisAngle2Quat(self.base_quat_inv, self.base_rot_axis, -self.qpos_base[2])  # Base orientation inverse
         mujoco.mju_rotVecQuat(self.shm_state.arm_pos, site_xpos, self.base_quat_inv)  # Arm pos in local frame
-        # print("arm pose",[round(x,4) for x in self.shm_state.arm_pos])
+        print("arm pose",[round(x,4) for x in self.shm_state.arm_pos])
         # Update arm quat
         mujoco.mju_mat2Quat(self.site_quat, self.site_xmat)
         # self.shm_state.arm_quat[:] = self.site_quat
@@ -324,7 +325,7 @@ class MujocoSim:
                 mujoco.mj_step(self.model, self.data)
 
 class MujocoEnv:
-    def __init__(self, render_images=False, show_viewer=True, show_images=False):
+    def __init__(self, render_images=False, show_viewer=False, show_images=False):
         self.mjcf_path = 'models/ufactory_xarm7/scene.xml'
         # self.mjcf_path = 'models/stanford_tidybot/scene.xml'
         self.render_images = render_images

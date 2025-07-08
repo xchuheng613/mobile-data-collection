@@ -1,6 +1,3 @@
-# Author: Jimmy Wu
-# Date: October 2024
-
 import argparse
 import time
 from itertools import count
@@ -13,20 +10,21 @@ import glfw
 import atexit
 import signal
 
-# Initialize GLFW once globally
-if not glfw.init():
-    raise RuntimeError("Failed to initialize GLFW")
 
-# Ensure GLFW is terminated when program exits
-atexit.register(glfw.terminate)
+# # Initialize GLFW once globally
+# if not glfw.init():
+#     raise RuntimeError("Failed to initialize GLFW")
 
-# Optional: also terminate GLFW when Ctrl+C is hit
-def handle_interrupt(sig, frame):
-    print("\n[INFO] Caught Ctrl+C, exiting safely...")
-    glfw.terminate()
-    sys.exit(0)
+# # Ensure GLFW is terminated when program exits
+# atexit.register(glfw.terminate)
 
-signal.signal(signal.SIGINT, handle_interrupt)
+# # Optional: also terminate GLFW when Ctrl+C is hit
+# def handle_interrupt(sig, frame):
+#     print("\n[INFO] Caught Ctrl+C, exiting safely...")
+#     glfw.terminate()
+#     sys.exit(0)
+
+# signal.signal(signal.SIGINT, handle_interrupt)
 
 def should_save_episode(writer):
     if len(writer) == 0:
@@ -61,17 +59,18 @@ def run_episode(env, policy, writer=None):
         step_end_time = start_time + step_idx * POLICY_CONTROL_PERIOD
         while time.time() < step_end_time:
             time.sleep(0.0001)
-
+        
         # Get latest observation
         obs = env.get_obs()
-
         # Get action
         action = policy.step(obs)
-
         # No action if teleop not enabled
         if action is None:
             continue
-
+        
+        print("obs",obs['arm_pos'])
+        print("act",action['arm_pos'])
+        print("*"*50)
         # Execute valid action on robot
         if isinstance(action, dict):
             env.step(action)
@@ -100,11 +99,13 @@ def run_episode(env, policy, writer=None):
         writer.wait_for_flush()
 
 def main(args):
+    # args.sim=True
+    # args.teleop=True
     # Create env
     if args.sim:
         from mujoco_env import MujocoEnv
         if args.teleop:
-            env = MujocoEnv(show_images=True)
+            env = MujocoEnv(show_images=False)
         else:
             env = MujocoEnv()
     else:
