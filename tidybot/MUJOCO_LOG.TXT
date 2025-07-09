@@ -13,3 +13,42 @@ ERROR: Python exception raised
 Mon Jul  7 18:19:15 2025
 ERROR: Python exception raised
 
+Tue Jul  8 16:48:13 2025
+ERROR: Python exception raised
+
+Tue Jul  8 17:12:09 2025
+ERROR: could not initialize GLFW
+
+Tue Jul  8 17:42:24 2025
+ERROR: could not initialize GLFW
+
+Tue Jul  8 17:57:22 2025
+ERROR: Python exception raised
+
+Tue Jul  8 17:58:27 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:02:03 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:02:24 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:02:56 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:03:46 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:04:16 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:04:49 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:06:05 2025
+ERROR: Python exception raised
+
+Tue Jul  8 18:13:40 2025
+ERROR: could not initialize GLFW
+

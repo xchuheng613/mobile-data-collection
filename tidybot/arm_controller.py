@@ -144,7 +144,7 @@ class Xarm:
             quat = R.from_euler('xyz', action['arm_euler']).as_quat()
         else:
             quat = np.zeros(4)
-        pos = np.array(action['arm_pos'])/1000.0
+        pos = np.array(action['arm_pos'])
         qpos = self.solver.solve(pos, quat, self.q)
         # print(self.q)
         print(f"ik result: {[round(x,4) for x in qpos]}")
@@ -230,7 +230,7 @@ class Xarm:
             code, self.gripper_pos = self.arm.get_gripper_position() / 850
             
         code, ee_state = self.arm.get_position(is_radian=True)
-        self.ee_pos = ee_state[:3]
-        self.ee_rpy = ee_state[3:]
+        self.ee_pos = np.array(ee_state[:3]) / 1000
+        self.ee_rpy = np.array(ee_state[3:])
         self.ee_quat = R.from_euler('xyz', self.ee_rpy).as_quat()
         

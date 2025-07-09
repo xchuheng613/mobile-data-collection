@@ -39,6 +39,7 @@ class RealEnv:
         obs.update(self.arm.get_state())
         # obs['base_image'] = self.base_camera.get_image()
         # obs['wrist_image'] = self.wrist_camera.get_image()
+        # print("obs",obs)
         return obs
 
     def reset(self):
@@ -52,6 +53,7 @@ class RealEnv:
 
     def step(self, action):
         # Note: We intentionally do not return obs here to prevent the policy from using outdated data
+        print("act",action)
         self.base.execute_action(action)  # Non-blocking
         self.arm.execute_action(action)   # Non-blocking
 

@@ -48,3 +48,12 @@ To perform a teleoperate simulation through mujoco, execute
 python3 main.py --sim --teleop
 ```
 You need to have a second device to connect the server (192.168.0.X:5000 in our case). After you connected to the server, press `Start episode` to start the simulation. Pressing on the edge which the screen will turn red, you can control the base movement. To control the arm, press on the middle of your screen which it will turn blue.
+
+## Teleoperate in Real
+To perform teleoperation in reality, you need to run three files simultaniously.
+```sh
+python3 arm_server.py
+python3 base_server.py
+python3 main.py --teleop
+```
+Similar to the previous simulation, you need a second device to connect to the server and control the robot.

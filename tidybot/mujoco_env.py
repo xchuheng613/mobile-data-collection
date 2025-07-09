@@ -130,9 +130,9 @@ class BaseController:
                 self.otg_res = Result.Working
 
         # Maintain current pose if command stream is disrupted
-        # if time.time() - self.last_command_time > 2.5 * POLICY_CONTROL_PERIOD:
-        #     self.otg_inp.target_position = self.qpos
-        #     self.otg_res = Result.Working
+        if time.time() - self.last_command_time > 2.5 * POLICY_CONTROL_PERIOD:
+            self.otg_inp.target_position = self.qpos
+            self.otg_res = Result.Working
 
         # Update OTG
         if self.otg_res == Result.Working:
@@ -150,7 +150,7 @@ class ArmController:
         self.ctrl_gripper = ctrl_gripper
 
         # IK solver
-        self.ik_solver = IKSolver(ee_offset=0.12)
+        self.ik_solver = IKSolver()
 
         # OTG (online trajectory generation)
         num_dofs = 7
@@ -183,8 +183,8 @@ class ArmController:
                 # Run inverse kinematics on new target pose
                 qpos = self.ik_solver.solve(command['arm_pos'], command['arm_quat'], self.qpos)
                 qpos = self.qpos + np.mod((qpos - self.qpos) + np.pi, 2 * np.pi) - np.pi  # Unwrapped joint angles
-                # print("ik", qpos)
-                # print("fk", self.ik_solver.forward_kinematics(qpos))
+                print("ik", qpos)
+                print("fk", self.ik_solver.forward_kinematics(qpos))
                 # Set target arm qpos
                 self.otg_inp.target_position = qpos
                 self.otg_res = Result.Working
@@ -194,16 +194,16 @@ class ArmController:
                 self.ctrl_gripper[:] = 255.0 * command['gripper_pos']  # fingers_actuator, ctrlrange [0, 255]
 
         # Maintain current pose if command stream is disrupted
-        # if time.time() - self.last_command_time > 2.5 * POLICY_CONTROL_PERIOD:
-        #     self.otg_inp.target_position = self.otg_out.new_position
-        #     self.otg_res = Result.Working
+        if time.time() - self.last_command_time > 2.5 * POLICY_CONTROL_PERIOD:
+            self.otg_inp.target_position = self.otg_out.new_position
+            self.otg_res = Result.Working
 
         # Update OTG
         if self.otg_res == Result.Working:
             self.otg_res = self.otg.update(self.otg_inp, self.otg_out)
             self.otg_out.pass_to_input(self.otg_inp)
             self.ctrl[:] = self.otg_out.new_position
-            # print('*'*10, "OTG CONTROL", np.round(self.ctrl, 4))
+            print('*'*10, "OTG CONTROL", np.round(self.ctrl, 4))
 
 
 class MujocoSim:
@@ -252,7 +252,9 @@ class MujocoSim:
         self.site_quat = np.empty(4)
         # print(self.site_xpos)
         # Set control callback
-        self.base_height = self.model.body('link_base').pos[2]
+        # self.base_height = self.model.body('link_base').pos[2]
+        self.base_offset = self.model.body('link_base').pos[:] + self.model.body('base').pos[:]
+        # print(self.model.body('link_base').pos[:])
         # self.base_height = self.model.body('gen3/base_link').pos[2]
         self.base_rot_axis = np.array([0.0, 0.0, 1.0])
         self.base_quat_inv = np.empty(4)
@@ -283,11 +285,9 @@ class MujocoSim:
             self.reset()
 
         # Control callbacks
-        print('*'*30,command,'*'*30)
-        if command is not None:
-            time.sleep(10000)
         self.base_controller.control_callback(command)
         self.arm_controller.control_callback(command)
+        print('*'*10,command,'*'*10)
 
         # Update base pose
         self.shm_state.base_pose[:] = self.qpos_base
@@ -295,15 +295,19 @@ class MujocoSim:
         # Update arm pos
         # self.shm_state.arm_pos[:] = self.site_xpos
         site_xpos = self.site_xpos.copy()
-        site_xpos[2] -= self.base_height  # Base height offset
+        # site_xpos[2] -= self.base_height  # Base height offset
+        site_xpos[:] -= self.base_offset  # Base height offset
         site_xpos[:2] -= self.qpos_base[:2]  # Base position inverse
         mujoco.mju_axisAngle2Quat(self.base_quat_inv, self.base_rot_axis, -self.qpos_base[2])  # Base orientation inverse
         mujoco.mju_rotVecQuat(self.shm_state.arm_pos, site_xpos, self.base_quat_inv)  # Arm pos in local frame
-        print("arm pose",[round(x,4) for x in self.shm_state.arm_pos])
+        
         # Update arm quat
         mujoco.mju_mat2Quat(self.site_quat, self.site_xmat)
         # self.shm_state.arm_quat[:] = self.site_quat
         mujoco.mju_mulQuat(self.shm_state.arm_quat, self.base_quat_inv, self.site_quat)  # Arm quat in local frame
+        print("base pose",[round(x,4) for x in self.shm_state.base_pose])
+        print("arm pose",[round(x,4) for x in self.shm_state.arm_pos])
+        print("arm quat",[round(x,4) for x in self.shm_state.arm_quat])
 
         # Update gripper pos
         self.shm_state.gripper_pos[:] = self.qpos_gripper / 0.8  # right_driver_joint, joint range [0, 0.8]
@@ -325,7 +329,7 @@ class MujocoSim:
                 mujoco.mj_step(self.model, self.data)
 
 class MujocoEnv:
-    def __init__(self, render_images=False, show_viewer=False, show_images=False):
+    def __init__(self, render_images=False, show_viewer=True, show_images=False):
         self.mjcf_path = 'models/ufactory_xarm7/scene.xml'
         # self.mjcf_path = 'models/stanford_tidybot/scene.xml'
         self.render_images = render_images

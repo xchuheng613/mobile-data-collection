@@ -28,7 +28,7 @@ class IKSolver:
         self.site_pos = self.data.site(self.site_id).xpos
         self.site_mat = self.data.site(self.site_id).xmat
         mujoco.mj_resetData(self.model, self.data)
-
+        
         # Add end effector offset for gripper
         self.model.site(self.site_id).pos = np.array([0.0, 0.0, -0.061525 - ee_offset])  # 0.061525 comes from the Kinova URDF
 
@@ -82,6 +82,7 @@ class IKSolver:
             mujoco.mj_integratePos(self.model, self.data.qpos, update, 1.0)
 
         return self.data.qpos.copy()
+    
     def forward_kinematics(self, qpos):
         self.data.qpos[:] = qpos
         mujoco.mj_kinematics(self.model, self.data)

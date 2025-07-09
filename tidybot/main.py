@@ -68,9 +68,9 @@ def run_episode(env, policy, writer=None):
         if action is None:
             continue
         
-        print("obs",obs['arm_pos'])
-        print("act",action['arm_pos'])
-        print("*"*50)
+        # print("obs",obs['arm_pos'])
+        # print("act",action['arm_pos'])
+        # print("*"*50)
         # Execute valid action on robot
         if isinstance(action, dict):
             env.step(action)
@@ -99,8 +99,6 @@ def run_episode(env, policy, writer=None):
         writer.wait_for_flush()
 
 def main(args):
-    # args.sim=True
-    # args.teleop=True
     # Create env
     if args.sim:
         from mujoco_env import MujocoEnv

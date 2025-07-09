@@ -167,8 +167,8 @@ class TeleopController:
                 pos_diff = pos - self.arm_xr_ref_pos  # WebXR
                 pos_diff += ref_z_rot.apply(self.arm_ref_pos) - z_rot.apply(self.arm_ref_pos)  # Secondary base control: Compensate for base rotation
                 pos_diff[:2] += self.arm_ref_base_pose[:2] - self.base_pose[:2]  # Secondary base control: Compensate for base translation
-                self.arm_target_pos = (self.arm_ref_pos + z_rot_inv.apply(pos_diff) * 1000)
-                # print(self.arm_target_pos)
+                self.arm_target_pos = self.arm_ref_pos + z_rot_inv.apply(pos_diff)
+                print("arm target",self.arm_target_pos)
 
                 # Orientation
                 self.arm_target_rot = (z_rot_inv * (rot * self.arm_xr_ref_rot_inv) * ref_z_rot) * self.arm_ref_rot
@@ -200,6 +200,7 @@ class TeleopController:
         arm_quat = self.arm_target_rot.as_quat()
         if arm_quat[3] < 0.0:  # Enforce quaternion uniqueness (Note: Not strictly necessary since policy training uses 6D rotation representation)
             np.negative(arm_quat, out=arm_quat)
+        # print("before action")
         action = {
             'base_pose': self.base_target_pose.copy(),
             'arm_pos': self.arm_target_pos.copy(),
@@ -207,6 +208,7 @@ class TeleopController:
             # 'arm_quat': self.arm_target_rot.copy(),
             'gripper_pos': self.gripper_target_pos.copy(),
         }
+        # print(action)
         return action
 
 # Teleop using WebXR phone web app
@@ -252,7 +254,7 @@ class TeleopPolicy(Policy):
         while True:
             if not self.web_server_queue.empty():
                 data = self.web_server_queue.get()
-
+                # print(data)
                 # Update state
                 if 'state_update' in data:
                     self.teleop_state = data['state_update']
